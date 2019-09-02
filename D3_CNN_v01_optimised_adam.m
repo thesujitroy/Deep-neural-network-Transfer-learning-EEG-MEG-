@@ -1,9 +1,7 @@
 %% dictionary of dataset and label
-clc;
-clear;
-
-dirname = 'U:\MEG-BCI\main\Deep Learning\BCICIV_2b_gdf';
-dirname2 ='U:\MEG-BCI\main\Deep Learning\true_labels';
+clc; clear;
+dirname = 'H:\Sujit Roy\civ2vcnn\BCICIV_2b_gdf';
+dirname2 ='H:\Sujit Roy\civ2vcnn\true_labels';
 
 %%%%%% get data of each subject
 XTrain = [];
@@ -158,6 +156,7 @@ for kn=1:9
 [size(XTrain) size(YTrain)]
 
 end
+clearvars -EXCEPT XTrain YTrain kn subIndex
 %%%%%
 % size(XTrain)
 %     XTrain = reshape(cell2mat(XTrain(1:nn)), size(XTrain{1},1), size(XTrain{1},2), size(XTrain{1},3), []);
@@ -175,12 +174,15 @@ YTrain=squeeze(YTrain);
 
 
 %%%%%
-ind = randperm(length(YTrain));
-YTrainSuffle = YTrain(ind);
-XTrainSuffle = XTrain(:,:,:,ind);
-subIndexSuffle = subIndex(ind);
-
-for kn = 1:9
+% ind = randperm(length(YTrain));
+% YTrainSuffle = YTrain(ind);
+% XTrainSuffle = XTrain(:,:,:,ind);
+% subIndexSuffle = subIndex(ind);
+YTrainSuffle = YTrain;
+XTrainSuffle = XTrain;
+subIndexSuffle = subIndex;
+clear XTrain YTrain subIndex
+for kn = 6:9
     tic
     ss = (subIndexSuffle==kn);
     size(ss)
@@ -197,84 +199,69 @@ for kn = 1:9
     fprintf('Size of train label of all subject %d \n', kn);
     size(Ytr)
     rng(1)
-    Ytr = categorical(Ytr);
-    Yte = categorical(Yte);
+%     Ytr = categorical(Ytr);
+%     Yte = categorical(Yte);
     
     
     %%
     optimVars = [
-        optimizableVariable('SectionDepth',[1 4],'Type','integer')
+        optimizableVariable('SectionDepth',[1 5],'Type','integer')
         optimizableVariable('InitialLearnRate',[1e-6 1e-2],'Transform','log')
         optimizableVariable('L2Regularization',[1e-10 1e-2],'Transform','log')];
-    ObjFcn = makeObjFcn(Xtr,Ytr,Xte,Yte);
+    ObjFcn = makeObjFcn(Xtr,categorical(Ytr),Xte,categorical(Yte));
     BayesObject = bayesopt(ObjFcn,optimVars, ...
         'MaxTime',14*60*60, ...
         'IsObjectiveDeterministic',false, ...
-        'UseParallel',false);
+        'UseParallel',true);
     bestIdx = BayesObject.IndexOfMinimumTrace(end);
     VE = BayesObject.UserDataTrace{bestIdx};
     savedStruct(kn) = load(VE);
     valError = savedStruct(kn).valError
     [YPredicted,probs] = classify(savedStruct(kn).trainedNet,Xte);
-    testError(kn) = 1 - mean(YPredicted == Yte);
-    accuracy(kn) = sum ((YPredicted) == Yte)/numel(Yte);
-    NTest = numel(Yte);
-    testErrorSE = sqrt(testError(kn)*(1-testError(kn))/NTest);
-    testError95CI = [testError(kn) - 1.96*testErrorSE, testError(kn) + 1.96*testErrorSE]
     
-    figure('Units','normalized','Position',[0.2 0.2 0.4 0.4]);
-    cm(kn) = confusionchart(Yte,YPredicted);
-    cm(kn).Title = (['Confusion Matrix for Test Data for subject ', num2str(kn)]);
-    cm(kn).ColumnSummary = 'column-normalized';
-    cm(kn).RowSummary = 'row-normalized';
+    seq = reshape(double(YPredicted)-1, 11, []);
+    seq = sum(seq);
+    seq = double((seq>5));
+    seqtarget = (Yte(1:11:end)-1)';
+    
+    seqprob = reshape(probs(:,2)-probs(:,1), 11, []);
+    seqprob = sum(seqprob);
+    seqprob = double((seqprob>0));
+    acc_prob(kn) = mean(seqprob == seqtarget);
+    
+    
+    kk1 = ((seq == 1) & (seqtarget == 1));
+    kk0 = ((seq == 0) & (seqtarget == 0));
+    
+    a = nnz(((seq == 0) & (seqtarget == 0)));
+    d = nnz(((seq == 1) & (seqtarget == 1)));
+    b = nnz(((seq == 0) & (seqtarget == 1)));
+    c = nnz(((seq == 1) & (seqtarget == 0)));
+    total = (a+b+c+d);
+    po(kn) = ((a+d)/total);
+    pyes = ((a+b)/total)*((a+c)/total);
+    pno = ((c+d)/total)* ((b+d)/total);
+    pe = pyes + pno;
+    kappa(kn) = (po(kn) -pe)/(1-pe);
+    
+    
+    
+    
+%     testError(kn) = 1 - mean(YPredicted == Yte);
+    accuracy(kn) = sum ((YPredicted) == categorical(Yte))/numel(Yte);
+%     NTest = numel(Yte);
+%     testErrorSE = sqrt(testError(kn)*(1-testError(kn))/NTest);
+%     testError95CI = [testError(kn) - 1.96*testErrorSE, testError(kn) + 1.96*testErrorSE]
+    
+%     figure('Units','normalized','Position',[0.2 0.2 0.4 0.4]);
+%     cm(kn) = confusionchart(Yte,YPredicted);
+%     cm(kn).Title = (['Confusion Matrix for Test Data for subject ', num2str(kn)]);
+%     cm(kn).ColumnSummary = 'column-normalized';
+%     cm(kn).RowSummary = 'row-normalized';
     toc
     %%
-    
-%     layers = [ ...
-%         imageInputLayer([40 32 3])
-%         convolution2dLayer([40 3],90,'Padding','same','Name','conv_1')
-%         batchNormalizationLayer('Name','BN_1')
-%         reluLayer('Name','relu_1')
-%         maxPooling2dLayer(2,'Stride',1)
-%         convolution2dLayer(3, 40,'Padding','same','Stride',2,'Name','conv_2')
-%         batchNormalizationLayer('Name','BN_2')
-%         reluLayer('Name','relu_2')
-%         maxPooling2dLayer(2,'Stride',1)
-%         convolution2dLayer(3, 20,'Padding','same','Name','conv_3')
-%         batchNormalizationLayer('Name','BN_3')
-%         reluLayer('Name','relu_3')
-%         maxPooling2dLayer(2,'Stride',1)
-%         %maxPooling2dLayer([1 10])
-%         %fullyConnectedLayer(50,'Name','fc')
-%         fullyConnectedLayer(2,'Name','fc')
-%         softmaxLayer('Name','softmax')
-%         classificationLayer('Name','classOutput')];
-% 
-%     miniBatchSize = 64;
-%    validationFrequency = floor(numel(Ytr')/miniBatchSize);
-%    %'LearnRateDropFactor',0.2, ...
-%    % 'LearnRateDropPeriod',5, ...
-%     idx = randperm(size(Xtr,4),500);
-%     XValidation = Xtr(:,:,:,idx);
-%     Xtr(:,:,:,idx) = [];
-%     YValidation = Ytr(idx)';
-%     Ytr(idx) = [];
-%     options = trainingOptions('sgdm',...
-%         'MaxEpochs',35,...
-%         'MiniBatchSize',miniBatchSize, ...
-%         'InitialLearnRate',1e-4, ...
-%         'Shuffle','every-epoch',...
-%         'ValidationData',{Xte,categorical(Yte)}, ...
-%         'ValidationFrequency',validationFrequency, ...
-%         'Plots','training-progress', ...
-%         'ExecutionEnvironment', 'multi-gpu', ...
-%         'L2Regularization', 0.004);
-%     fprintf('Training network with validation data size %d\n', size(YValidation));
-%     net = trainNetwork(Xtr,categorical(Ytr),layers,options);
-%     YPred = classify(net,Xte);
-%     YTest = Yte;
-%     accuracy(kn) = sum (double(YPred) == Yte)/numel(Yte);
-    
+
+    clear Xtr Xte Ytr Yte seqprob seqtarget ss Ypredicted pe pyes pno kk1 kk0
 end
 mean_accuracy = mean(accuracy);
 %
