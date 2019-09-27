@@ -8,3 +8,6 @@ Cite these papers if you are using part of code:
 
 1. Roy, Sujit, et al. "Channel Selection Improves MEG-based Brain-Computer Interface." 2019 9th International IEEE/EMBS Conference on Neural Engineering (NER). IEEE, 2019.
 
+
+
+under development
