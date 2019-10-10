@@ -31,17 +31,17 @@ def arrange_data(data, labels):
                 output_labels.append(0)
             else:
                 output_labels.append(1)
-                
+
     output_data = np.array(output_data)
     output_labels = np.array(output_labels)
     return output_data, output_labels
 
 def run_classification(data, labels, session1=(1, 2, 3), session2=(4,5)):
-    
-    
+
+
     for subject in data:
         # if subject == 'subject1': continue
-        
+
         input_data = list()
         target_labels = list()
         x_test = list()
@@ -57,16 +57,16 @@ def run_classification(data, labels, session1=(1, 2, 3), session2=(4,5)):
         [y_test.extend(labels[subject]["session" + str(idx)]) for idx in session2]
         test_data = np.array(x_test)
         test_labels = np.array(y_test)
-       
-            
+
+
         train_data, train_labels = arrange_data(input_data, target_labels)
         test_data, test_labels = arrange_data(x_test, y_test)
         train_data = train_data.reshape(train_data.shape[0],train_data.shape[1],train_data.shape[2],train_data.shape[4])
         test_data = test_data.reshape(test_data.shape[0],test_data.shape[1],test_data.shape[2],test_data.shape[4])
         size_y, size_x = train_data[0].shape[0:2]
         return train_data, test_data, size_y, size_x, test_labels, train_labels
-    
-"""-----------------"""    
+
+"""-----------------"""
 
 '''downsample'''
 def downsample(filters, size, apply_batchnorm=True):
@@ -104,7 +104,7 @@ def upsample(filters, size, apply_dropout=False):
   result.add(tf.keras.layers.ReLU())
 
   return result
-"""-----------------"""  
+"""-----------------"""
 
 '''Building Generator'''
 def Generator():
@@ -112,18 +112,18 @@ def Generator():
     downsample(64, 4, apply_batchnorm=False), # (bs, 128, 128, 64)
     downsample(128, 4), # (bs, 64, 64, 128)
     downsample(256, 4), # (bs, 32, 32, 256)
-    downsample(512, 4), # (bs, 16, 16, 512)
-    downsample(512, 4), # (bs, 8, 8, 512)
-    downsample(512, 4), # (bs, 4, 4, 512)
-    downsample(512, 4), # (bs, 2, 2, 512)
-    downsample(512, 4), # (bs, 1, 1, 512)
+#    downsample(512, 4), # (bs, 16, 16, 512)
+#    downsample(512, 4), # (bs, 8, 8, 512)
+#    downsample(512, 4), # (bs, 4, 4, 512)
+
+
   ]
 
   up_stack = [
-    upsample(512, 4, apply_dropout=True), # (bs, 2, 2, 1024)
-    upsample(512, 4, apply_dropout=True), # (bs, 4, 4, 1024)
-    upsample(512, 4, apply_dropout=True), # (bs, 8, 8, 1024)
-    upsample(512, 4), # (bs, 16, 16, 1024)
+
+#    upsample(512, 4, apply_dropout=True), # (bs, 4, 4, 1024)
+#    upsample(512, 4, apply_dropout=True), # (bs, 8, 8, 1024)
+#    upsample(512, 4), # (bs, 16, 16, 1024)
     upsample(256, 4), # (bs, 32, 32, 512)
     upsample(128, 4), # (bs, 64, 64, 256)
     upsample(64, 4), # (bs, 128, 128, 128)
@@ -138,7 +138,7 @@ def Generator():
 
   concat = tf.keras.layers.Concatenate()
 
-  inputs = tf.keras.layers.Input(shape=[None,None,3])
+  inputs = tf.keras.layers.Input(shape=[40,32,3])
   x = inputs
 
   # Downsampling through the model
@@ -232,7 +232,7 @@ def train_step(input_image, target):
                                           generator.trainable_variables))
   discriminator_optimizer.apply_gradients(zip(discriminator_gradients,
                                               discriminator.trainable_variables))
-  
+
 def generate_images(model, test_input, tar):
   # the training=True is intentional here since
   # we want the batch statistics while running the model
@@ -251,7 +251,7 @@ def generate_images(model, test_input, tar):
     # getting the pixel values between [0, 1] to plot it.
     plt.imshow(display_list[i] * 0.5 + 0.5)
     plt.axis('off')
-  plt.show() 
+  plt.show()
 
 
 
@@ -264,16 +264,16 @@ def fit(train_ds, epochs, test_ds):
       train_step(input_image, target)
 
     clear_output(wait=True)
-    # Test on the same image so that the progress of the model can be 
+    # Test on the same image so that the progress of the model can be
     # easily seen.
     for example_input, example_target in test_ds.take(1):
       generate_images(generator, example_input, example_target)
 
-    
+
 
     print ('Time taken for epoch {} is {} sec\n'.format(epoch + 1,
                                                         time.time()-start))
-    
+
 if __name__ == '__main__':
     # '''
     OUTPUT_CHANNELS = 3
@@ -297,18 +297,18 @@ if __name__ == '__main__':
     '''-----------------------------'''
     '''playing with generator'''
     generator = Generator()
-
-    gen_output = generator(inp[tf.newaxis,...], training=False)
+    xxx= train_data[0].astype(np.float32)
+    gen_output = generator(xxx[tf.newaxis,...], training=False)
     plt.imshow(gen_output[0,...])
     '''-----------------------------'''
-    
+
     '''playing with discriminator'''
-    
+
     discriminator = Discriminator()
     disc_out = discriminator([inp[tf.newaxis,...], gen_output], training=False)
     plt.imshow(disc_out[0,...,-1], vmin=-20, vmax=20, cmap='RdBu_r')
     plt.colorbar()
-    
+
     '''----------------------------'''
-    
+
     fit(train_data, EPOCHS, test_data)
