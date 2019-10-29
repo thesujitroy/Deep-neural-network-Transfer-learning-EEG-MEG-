@@ -8,10 +8,13 @@ Created on Tue Oct 29 16:16:37 2019
 import tensorflow.contrib.layers as lays
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 train_data = np.load('train_data.npy')
 train_labels= np.load('train_labels.npy')
-
+batch_size = 40  # Number of samples in each batch
+epoch_num = 5     # Number of epochs to train the network
+lr = 0.001 
 def autoencoder(inputs):
     # encoder
     # 32 x 32 x 1   ->  16 x 16 x 32
@@ -19,12 +22,12 @@ def autoencoder(inputs):
     # 8 x 8 x 16    ->  2 x 2 x 8
     net = lays.conv2d(inputs, [40,32], [5, 5], stride=2, padding='SAME')
     net = lays.conv2d(net, [20, 16], [5, 5], stride=2, padding='SAME')
-    net = lays.conv2d(net, [10,8], [5, 5], stride=4, padding='SAME')
+    net = lays.conv2d(net, [10,8], [5, 5], stride=2, padding='SAME')
     # decoder
     # 2 x 2 x 8    ->  8 x 8 x 16
     # 8 x 8 x 16   ->  16 x 16 x 32
     # 16 x 16 x 32  ->  32 x 32 x 1
-    net = lays.conv2d_transpose(net, [20,16], [5, 5], stride=4, padding='SAME')
+    net = lays.conv2d_transpose(net, [20,16], [5, 5], stride=2, padding='SAME')
     net = lays.conv2d_transpose(net, [40,32], [5, 5], stride=2, padding='SAME')
     net = lays.conv2d_transpose(net, 1, [5, 5], stride=2, padding='SAME', activation_fn=tf.nn.tanh)
     return net
@@ -37,9 +40,7 @@ train_op = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss)
 # initialize the network
 init = tf.global_variables_initializer()
 
-batch_size = 40  # Number of samples in each batch
-epoch_num = 5     # Number of epochs to train the network
-lr = 0.001        # Learning rate
+       # Learning rate
 # read MNIST dataset
 
 # calculate the number of batches per epoch
@@ -55,7 +56,7 @@ with tf.Session() as sess:
             print('Epoch: {} - cost= {:.5f}'.format((ep + 1), c))
     # test the trained network
     batch_img, batch_label = train_data.next_batch(50)
-    batch_img = resize_batch(batch_img)
+    #batch_img = resize_batch(batch_img)
     recon_img = sess.run([ae_outputs], feed_dict={ae_inputs: batch_img})[0]
     # plot the reconstructed images and their ground truths (inputs)
     plt.figure(1)
