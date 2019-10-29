@@ -38,3 +38,35 @@ hid_layer1=actf(tf.matmul(X,w1)+b1)
 hid_layer2=actf(tf.matmul(hid_layer1,w2)+b2)
 hid_layer3=actf(tf.matmul(hid_layer2,w3)+b3)
 output_layer=actf(tf.matmul(hid_layer3,w4)+b4)
+
+
+loss=tf.reduce_mean(tf.square(output_layer-X))
+
+optimizer=tf.train.AdamOptimizer(lr)
+train=optimizer.minimize(loss)
+
+init=tf.global_variables_initializer()
+
+num_epoch=5
+batch_size=150
+num_test_images=10
+
+with tf.Session() as sess:
+    sess.run(init)
+    for epoch in range(num_epoch):
+        
+        num_batches=mnist.train.num_examples//batch_size
+        for iteration in range(num_batches):
+            X_batch,y_batch=mnist.train.next_batch(batch_size)
+            sess.run(train,feed_dict={X:X_batch})
+            
+        train_loss=loss.eval(feed_dict={X:X_batch})
+        print("epoch {} loss {}".format(epoch,train_loss))
+        
+results=output_layer.eval(feed_dict={X:mnist.test.images[:num_test_images]})
+    
+    #Comparing original images with reconstructions
+f,a=plt.subplots(2,10,figsize=(20,4))
+for i in range(num_test_images):
+    a[0][i].imshow(np.reshape(mnist.test.images[i],(40,32)))
+    a[1][i].imshow(np.reshape(results[i],(40,32)))
