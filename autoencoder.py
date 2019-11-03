@@ -19,7 +19,6 @@ lr = 0.001
 BATCH_SIZE = 40
 TRAIN_BUF = 4400
 
-#train_dataset = tf.data.Dataset.from_tensor_slices(train_data).shuffle(TRAIN_BUF).batch(BATCH_SIZE)
 def autoencoder(inputs):
     # encoder
 
@@ -41,7 +40,6 @@ train_op = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss)
 # initialize the network
 init = tf.global_variables_initializer()
 
-       # Learning rate
 
 y = train_data.shape[0]
 
