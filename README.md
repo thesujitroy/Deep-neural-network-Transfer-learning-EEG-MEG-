@@ -19,4 +19,4 @@ Cite these papers if you are using part of code:
 
 2. Roy, S., McCreadie, K. and Prasad, G., 2019, October. Can a Single Model Deep Learning Approach Enhance Classification Accuracy of an EEG-based Brain-Computer Interface?. In 2019 IEEE International Conference on Systems, Man and Cybernetics (SMC) (pp. 1317-1321). IEEE.
 
-under development
+# under development
