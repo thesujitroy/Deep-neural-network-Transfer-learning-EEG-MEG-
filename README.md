@@ -19,4 +19,7 @@ Cite these papers if you are using part of code:
 
 2. Roy, S., McCreadie, K. and Prasad, G., 2019, October. Can a Single Model Deep Learning Approach Enhance Classification Accuracy of an EEG-based Brain-Computer Interface?. In 2019 IEEE International Conference on Systems, Man and Cybernetics (SMC) (pp. 1317-1321). IEEE.
 
+3. Roy, S., Chowdhury, A., McCreadie, K. and Prasad, G., 2020. Deep learning based inter-subject continuous decoding of motor imagery for practical brain-computer interfaces. Frontiers in Neuroscience, 14.
+
+
 # under development
